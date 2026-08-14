@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>wbgdr2 ⇄ gdr2 Converter</title>
+<style>
+  :root{
+    --bg: #0d0f14;
+    --panel: #14171f;
+    --panel-2: #1a1e28;
+    --line: #262b38;
+    --text: #e8eaf0;
+    --dim: #8890a4;
+    --accent: #5be3c9;
+    --accent-2: #ff5f7e;
+    --mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(91,227,201,0.08), transparent 40%),
+      radial-gradient(circle at 85% 100%, rgba(255,95,126,0.07), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    padding: 40px 20px 80px;
+  }
+  .wrap{max-width: 880px; margin: 0 auto;}
+  header{margin-bottom: 36px;}
+  .eyebrow{
+    font-family: var(--mono); font-size: 12px; letter-spacing:.14em; text-transform:uppercase;
+    color: var(--accent); margin-bottom: 10px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow .tick{width:14px;height:14px; background:var(--accent); clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%);}
+  h1{font-size: 30px; margin: 0 0 8px; letter-spacing:-0.01em;}
+  header p{color:var(--dim); font-size:14.5px; line-height:1.55; max-width:640px; margin:0;}
+  header code{font-family:var(--mono); background:var(--panel-2); padding:1px 6px; border-radius:4px; font-size:13px; color:var(--accent);}
+
+  .grid{display:grid; grid-template-columns: 1fr 1fr; gap: 20px;}
+  @media (max-width: 720px){ .grid{grid-template-columns: 1fr;} }
+
+  .card{
+    background: var(--panel); border:1px solid var(--line); border-radius: 14px;
+    padding: 22px; position:relative; overflow:hidden;
+  }
+  .card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  }
+  .card.a::before{background: var(--accent);}
+  .card.b::before{background: var(--accent-2);}
+  .card h2{font-size:16px; margin:2px 0 4px; display:flex; align-items:center; gap:8px;}
+  .card h2 .arrow{color:var(--dim); font-weight:400;}
+  .card .sub{color:var(--dim); font-size:13px; margin:0 0 18px; line-height:1.5;}
+
+  .drop{
+    border: 1.5px dashed var(--line); border-radius:10px; padding: 22px 16px;
+    text-align:center; cursor:pointer; transition: border-color .15s, background .15s;
+    font-size: 13.5px; color: var(--dim);
+  }
+  .drop:hover, .drop.drag{border-color: var(--accent); background: rgba(91,227,201,0.05); color:var(--text);}
+  .drop input{display:none;}
+  .filename{font-family:var(--mono); color:var(--accent); font-size:12.5px; margin-top:8px; word-break:break-all;}
+
+  .opts{margin-top:16px; display:none;}
+  .opts.show{display:block;}
+  .row{display:flex; gap:10px; margin-bottom:10px; align-items:center;}
+  .row label{flex:0 0 128px; font-size:12.5px; color:var(--dim);}
+  .row input[type=text], .row input[type=number]{
+    flex:1; background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+    padding:7px 9px; color:var(--text); font-family:var(--mono); font-size:12.5px;
+  }
+  .row input[type=checkbox]{width:15px;height:15px; accent-color: var(--accent);}
+  .row.chk label{flex:1;}
+
+  button.go{
+    width:100%; margin-top:16px; padding:11px; border:none; border-radius:8px;
+    background: var(--accent); color:#08201b; font-weight:700; font-size:13.5px;
+    cursor:pointer; letter-spacing:.01em; transition: transform .08s, opacity .15s;
+  }
+  button.go:hover{opacity:.9;}
+  button.go:active{transform: scale(0.98);}
+  .card.b button.go{background: var(--accent-2); color:#2a0611;}
+  button.go:disabled{opacity:.35; cursor:not-allowed;}
+
+  .log{
+    margin-top:14px; font-family:var(--mono); font-size:11.5px; color:var(--dim);
+    background: #0a0c11; border:1px solid var(--line); border-radius:8px;
+    padding:10px 12px; max-height:150px; overflow-y:auto; white-space:pre-wrap; display:none;
+  }
+  .log.show{display:block;}
+  .log .ok{color:var(--accent);}
+  .log .warn{color:#ffb84d;}
+  .log .err{color:var(--accent-2);}
+
+  footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--line); color:var(--dim); font-size:12px; line-height:1.6;}
+  footer strong{color:var(--text);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="tick"></span>macro format converter</div>
+    <h1>wbgdr2 ⇄ gdr2</h1>
+    <p>Convert between <code>.wbgdr2</code> (the JSON per-frame physics format used by web Geometry Dash recreations) and <code>.gdr2</code> (the binary <strong>GDReplayFormat v2</strong> used by 2.2 mod-menu bots). Everything runs locally in your browser — nothing is uploaded anywhere.</p>
+  </header>
+
+  <div class="grid">
+    <!-- wbgdr2 -> gdr2 -->
+    <div class="card a">
+      <h2>.wbgdr2 <span class="arrow">→</span> .gdr2</h2>
+      <p class="sub">Reads jump/input events out of the per-frame physics log and packs them into a real GDR2 binary replay.</p>
+
+      <div class="drop" id="drop1">
+        Drop a <strong>.wbgdr2</strong> file here<br>or click to browse
+        <div class="filename" id="fname1"></div>
+        <input type="file" id="file1" accept=".wbgdr2,.json,application/json">
+      </div>
+
+      <div class="opts" id="opts1">
+        <div class="row"><label>Framerate</label><input type="number" id="fps1" value="240" min="1"></div>
+        <div class="row"><label>Game version</label><input type="number" id="gv1" value="22074" min="0"></div>
+        <div class="row"><label>Bot name</label><input type="text" id="botname1" value="wbgdr2-converter"></div>
+        <div class="row chk"><label for="pf1">Platformer input packing</label><input type="checkbox" id="pf1"></div>
+      </div>
+
+      <button class="go" id="go1" disabled>Convert to .gdr2</button>
+      <div class="log" id="log1"></div>
+    </div>
+
+    <!-- gdr2 -> wbgdr2 -->
+    <div class="card b">
+      <h2>.gdr2 <span class="arrow">→</span> .wbgdr2</h2>
+      <p class="sub">Reads the input timeline out of a GDR2 replay and rebuilds a wbgdr2-shaped JSON. Physics fields (position, velocity, mode…) can't be recovered from gdr2 — see the note below.</p>
+
+      <div class="drop" id="drop2">
+        Drop a <strong>.gdr2</strong> file here<br>or click to browse
+        <div class="filename" id="fname2"></div>
+        <input type="file" id="file2" accept=".gdr2">
+      </div>
+
+      <div class="opts" id="opts2">
+        <div class="row"><label>Macro name</label><input type="text" id="name2" value=""></div>
+      </div>
+
+      <button class="go" id="go2" disabled>Convert to .wbgdr2</button>
+      <div class="log" id="log2"></div>
+    </div>
+  </div>
+
+  <footer>
+    <strong>Notes on fidelity</strong><br>
+    • <strong>wbgdr2 → gdr2</strong> is derived directly from your file's <code>upKeyDown</code> transitions (per frame, per player), so click/release timing round-trips exactly. Death frames are pulled from <code>diedThisFrame</code> when present.<br>
+    • <strong>gdr2 → wbgdr2</strong> can only reconstruct input timing (jump down/up per frame), not simulated physics — the output fills placeholder physics state so the file matches the wbgdr2 shape, but <code>y</code>/<code>yVelocity</code>/<code>mode</code>/etc. won't reflect real gameplay unless your web recreation re-simulates from inputs.<br>
+    • Binary layout is ported directly from the reference <a href="https://github.com/maxnut/GDReplayFormat/blob/gdr2/include/gdr/gdr.hpp" style="color:var(--accent)" target="_blank">GDReplayFormat v2 source</a> (not just the readme, which describes a couple of fields inaccurately) — length-prefixed strings, big-endian float duration/framerate, delta+LEB128-packed inputs — and cross-checked byte-for-byte against the real C++ library in both directions. It doesn't include bot-specific extension fields.
+  </footer>
+</div>
+
+<script>
+/* =============================================================================
+   Byte I/O helpers — ported directly from the real GDReplayFormat v2 source
+   (maxnut/GDReplayFormat, "gdr2" branch: include/gdr/binarystream.hpp + gdr.hpp).
+   Notably: strings are length-prefixed (NOT null-terminated as the readme's
+   table claims), and float/double fields are raw big-endian IEEE-754, not
+   varints. Integral types (int, uint32_t, uint64_t/size_t, bool) use LEB128.
+   ============================================================================= */
+class ByteWriter{
+  constructor(){ this.bytes = []; }
+  u8(b){ this.bytes.push(b & 0xFF); }
+  bytesRaw(arr){ for(const b of arr) this.bytes.push(b); }
+  bool(v){ this.varint(v ? 1 : 0); }
+  // Standard LEB128 (integral types): 7 data bits/byte, MSB = continuation flag.
+  varint(n){
+    n = Math.floor(n);
+    if(n < 0) n = 0;
+    if(n === 0){ this.u8(0); return; }
+    while(n > 0){
+      let byte = n % 128;
+      n = Math.floor(n / 128);
+      if(n > 0){ this.u8(byte | 0x80); } else { this.u8(byte); }
+    }
+  }
+  // Length-prefixed string (varint byte-length + raw UTF-8 bytes, no terminator).
+  pstring(s){
+    s = s || "";
+    const enc = new TextEncoder().encode(s);
+    this.varint(enc.length);
+    this.bytesRaw(enc);
+  }
+  // Raw big-endian IEEE-754.
+  float32(v){
+    const buf = new ArrayBuffer(4);
+    new DataView(buf).setFloat32(0, v, false);
+    this.bytesRaw(new Uint8Array(buf));
+  }
+  float64(v){
+    const buf = new ArrayBuffer(8);
+    new DataView(buf).setFloat64(0, v, false);
+    this.bytesRaw(new Uint8Array(buf));
+  }
+  toUint8Array(){ return new Uint8Array(this.bytes); }
+}
+
+class ByteReader{
+  constructor(u8){ this.data = u8; this.pos = 0; }
+  u8(){ if(this.pos >= this.data.length) throw new Error("Unexpected end of file"); return this.data[this.pos++]; }
+  bytesRaw(n){ const out = this.data.slice(this.pos, this.pos+n); this.pos += n; return out; }
+  bool(){ return this.varint() !== 0; }
+  varint(){
+    let result = 0, shift = 0, byte;
+    do{
+      byte = this.u8();
+      result += (byte & 0x7F) * Math.pow(2, shift);
+      shift += 7;
+    } while(byte & 0x80);
+    return result;
+  }
+  pstring(){
+    const len = this.varint();
+    const slice = this.bytesRaw(len);
+    return new TextDecoder().decode(slice);
+  }
+  float32(){
+    const slice = this.bytesRaw(4);
+    return new DataView(slice.buffer, slice.byteOffset, 4).getFloat32(0, false);
+  }
+  float64(){
+    const slice = this.bytesRaw(8);
+    return new DataView(slice.buffer, slice.byteOffset, 8).getFloat64(0, false);
+  }
+  remaining(){ return this.data.length - this.pos; }
+}
+
+/* Input packing (matches gdr.hpp InputChunk / InputChunkNP exactly):
+     non-platformer: packed = (delta << 1) | down
+     platformer:     packed = (delta << 3) | (button << 1) | down   (button: 2 bits)
+   The packed integer is then written as one ordinary LEB128 varint — there is
+   no special per-byte bit layout beyond that. */
+function writePackedInput(w, delta, pressed, platformer, buttonId){
+  delta = Math.floor(delta);
+  if(delta < 0) delta = 0;
+  let packed;
+  if(platformer){
+    packed = delta * 8 + ((buttonId & 3) * 2) + (pressed ? 1 : 0);
+  } else {
+    packed = delta * 2 + (pressed ? 1 : 0);
+  }
+  w.varint(packed);
+}
+
+function readPackedInput(r, platformer){
+  const packed = r.varint();
+  if(platformer){
+    const delta = Math.floor(packed / 8);
+    const buttonId = Math.floor(packed / 2) & 3;
+    const pressed = (packed & 1) === 1;
+    return { delta, pressed, buttonId };
+  } else {
+    const delta = Math.floor(packed / 2);
+    const pressed = (packed & 1) === 1;
+    return { delta, pressed, buttonId: null };
+  }
+}
+
+/* ============================= GDR2 encode/decode ============================= */
+// meta = {author, description, duration, gameVersion, framerate, seed, coins, ldm, platformer,
+//         botName, botVersion, levelId, levelName}
+// inputs = [{frame, button, player2, down}]  (button: 1=jump,2=left,3=right)
+// deaths = [frameNumbers...]
+function encodeGDR2(meta, inputs, deaths){
+  const w = new ByteWriter();
+  // Header
+  w.bytesRaw([0x47, 0x44, 0x52]); // "GDR" (raw, no length prefix)
+  w.varint(meta.version != null ? meta.version : 2); // format version (real lib defaults to 2)
+  w.pstring(""); // input tag (base Input<>, no extensions)
+
+  // Metadata (order + types match gdr::Replay::exportData exactly)
+  w.pstring(meta.author || "");
+  w.pstring(meta.description || "");
+  w.float32(meta.duration || 0);       // float, SECONDS (not frames!)
+  w.varint(meta.gameVersion || 0);     // int
+  w.float64(meta.framerate || 240);    // double, ticks/sec (not varint!)
+  w.varint(meta.seed || 0);            // int
+  w.varint(meta.coins || 0);           // int
+  w.bool(!!meta.ldm);
+  w.bool(!!meta.platformer);
+  w.pstring(meta.botName || "converter");
+  w.varint(meta.botVersion || 1);
+  w.varint(meta.levelId || 0);         // uint32
+  w.pstring(meta.levelName || "");
+  w.varint(0); // extension size (none) — size_t, no extension bytes follow
+
+  // Death frames (delta-encoded, sorted ascending)
+  const sortedDeaths = [...deaths].sort((a,b)=>a-b);
+  w.varint(sortedDeaths.length);
+  let prevDeath = 0;
+  for(const f of sortedDeaths){
+    w.varint(f - prevDeath);
+    prevDeath = f;
+  }
+
+  // Inputs: all P1, then all P2, each sorted ascending by frame, delta-encoded per stream
+  const p1 = inputs.filter(i => !i.player2).sort((a,b)=>a.frame-b.frame);
+  const p2 = inputs.filter(i => i.player2).sort((a,b)=>a.frame-b.frame);
+  w.varint(p1.length + p2.length);
+  w.varint(p1.length);
+
+  const writeStream = (stream) => {
+    let prevFrame = 0;
+    for(const inp of stream){
+      const delta = inp.frame - prevFrame;
+      prevFrame = inp.frame;
+      writePackedInput(w, delta, inp.down, !!meta.platformer, meta.platformer ? inp.button : 0);
+    }
+  };
+  writeStream(p1);
+  writeStream(p2);
+
+  return w.toUint8Array();
+}
+
+function decodeGDR2(u8){
+  const r = new ByteReader(u8);
+  const magic = r.bytesRaw(3);
+  const magicStr = String.fromCharCode(...magic);
+  if(magicStr !== "GDR") throw new Error('Not a valid GDR2 file (missing "GDR" magic header).');
+
+  const version = r.varint();
+  const inputTag = r.pstring();
+
+  const meta = {};
+  meta.author = r.pstring();
+  meta.description = r.pstring();
+  meta.duration = r.float32();     // seconds
+  meta.gameVersion = r.varint();
+  meta.framerate = r.float64();    // ticks/sec
+  meta.seed = r.varint();
+  meta.coins = r.varint();
+  meta.ldm = r.bool();
+  meta.platformer = r.bool();
+  meta.botName = r.pstring();
+  meta.botVersion = r.varint();
+  meta.levelId = r.varint();
+  meta.levelName = r.pstring();
+  const extSize = r.varint();
+  if(extSize > r.remaining()) throw new Error("Invalid extension size (file is likely corrupt or not GDR2).");
+  if(extSize > 0) r.bytesRaw(extSize); // skip unknown extension data
+
+  const deathCount = r.varint();
+  const deaths = [];
+  let prevDeath = 0;
+  for(let i=0;i<deathCount;i++){
+    prevDeath += r.varint();
+    deaths.push(prevDeath);
+  }
+
+  const inputCount = r.varint();
+  const p1Count = r.varint();
+  const p2Count = inputCount - p1Count;
+
+  const inputs = [];
+  const readStream = (count, isP2) => {
+    let prevFrame = 0;
+    for(let i=0;i<count;i++){
+      const { delta, pressed, buttonId } = readPackedInput(r, meta.platformer);
+      prevFrame += delta;
+      const button = meta.platformer ? (buttonId === 1 ? 1 : buttonId === 2 ? 2 : buttonId === 3 ? 3 : 1) : 1;
+      inputs.push({ frame: prevFrame, button, player2: isP2, down: pressed });
+    }
+  };
+  readStream(p1Count, false);
+  readStream(p2Count, true);
+
+  return { version, inputTag, meta, deaths, inputs };
+}
+
+/* ============================= wbgdr2 -> gdr2 ============================= */
+function wbgdr2ToGdr2(wb, opts, logFn){
+  const frames = wb.frames || [];
+  if(frames.length === 0) throw new Error("wbgdr2 file has no frames.");
+
+  const inputs = [];
+  const deaths = [];
+
+  const collect = (getState, player2) => {
+    let prevUp = false;
+    let have = false;
+    for(const f of frames){
+      const st = getState(f);
+      if(!st) continue;
+      const up = !!st.upKeyDown;
+      if(!have){ prevUp = up; have = true; if(up){ inputs.push({frame:f.frame, button:1, player2, down:true}); } continue; }
+      if(up !== prevUp){
+        inputs.push({ frame: f.frame, button: 1, player2, down: up });
+        prevUp = up;
+      }
+    }
+  };
+
+  collect(f => f.player && f.player.state, false);
+  collect(f => f.dualPlayer && f.dualPlayer.state, true);
+
+  for(const f of frames){
+    const st1 = f.player && f.player.state;
+    const st2 = f.dualPlayer && f.dualPlayer.state;
+    if((st1 && st1.diedThisFrame) || (st2 && st2.diedThisFrame)){
+      deaths.push(f.frame);
+    }
+  }
+
+  logFn(`Found ${inputs.length} input events (${inputs.filter(i=>!i.player2).length} p1, ${inputs.filter(i=>i.player2).length} p2)`, "ok");
+  if(deaths.length) logFn(`Found ${deaths.length} death frame(s)`, "ok");
+
+  const levelStr = (wb.meta && wb.meta.level) || "";
+  const numMatch = levelStr.match(/(\d+)\s*$/);
+  const levelId = numMatch ? parseInt(numMatch[1], 10) : 0;
+
+  const maxFrame = frames[frames.length - 1].frame || frames.length;
+  const durationSeconds = maxFrame / (opts.framerate || 240);
+
+  const meta = {
+    author: (wb.meta && wb.meta.author) || "",
+    description: `Converted from wbgdr2 macro "${(wb.meta && wb.meta.name) || ""}"`,
+    duration: durationSeconds,
+    gameVersion: opts.gameVersion,
+    framerate: opts.framerate,
+    seed: 0,
+    coins: 0,
+    ldm: false,
+    platformer: opts.platformer,
+    botName: opts.botName,
+    botVersion: 1,
+    levelId: levelId,
+    levelName: (wb.meta && (wb.meta.name || levelStr)) || ""
+  };
+
+  return encodeGDR2(meta, inputs, deaths);
+}
+
+/* ============================= gdr2 -> wbgdr2 ============================= */
+function gdr2ToWbgdr2(parsed, opts){
+  const { meta, inputs, deaths } = parsed;
+  const maxInputFrame = inputs.length ? Math.max(...inputs.map(i=>i.frame)) : 0;
+  const framesFromDuration = Math.round((meta.duration || 0) * (meta.framerate || 240));
+  const duration = Math.max(framesFromDuration, maxInputFrame);
+
+  const deathSet = new Set(deaths);
+  const p1events = inputs.filter(i => !i.player2).sort((a,b)=>a.frame-b.frame);
+  const p2events = inputs.filter(i => i.player2).sort((a,b)=>a.frame-b.frame);
+  const hasP2 = p2events.length > 0;
+
+  const defaultState = (up) => ({
+    y: 30, lastY: 30, lastGroundPosY: 30, yVelocity: 0,
+    onGround: !up, canJump: true, isJumping: up, gravityFlipped: false,
+    isFlying: false, isBall: false, isWave: false, isUfo: false, isSpider: false,
+    isBird: false, isDart: false, isRobot: false, isSwing: false, isJetpack: false,
+    isMini: false, wasBoosted: false, _slopeBounceActive: false, pendingVelocity: null,
+    collideTop: 0, collideBottom: 0, onCeiling: false,
+    upKeyDown: up, upKeyPressed: up, queuedHold: false, _orbActivationConsumedForPress: false,
+    isDead: false, mirrored: false, isDashing: false, dashYVelocity: 0, isDual: false,
+    ignorePortals: false, _robotHold: false, _robotHoldTimer: 0,
+    _spiderTeleportNoclipDeathPending: false, ballShouldRotate: false, ballRotateOpposite: false,
+    ballNormalRotate: 1, ballHitPad: false, ballRotation2: 0, diedThisFrame: false,
+    touchingRing: false, lastGroundY: 30, wasUpKeyDown: up, diedLastFrame: false
+  });
+
+  function buildTimeline(events){
+    const upByFrame = new Map();
+    let cur = false;
+    let ei = 0;
+    for(let f = 0; f <= duration; f++){
+      while(ei < events.length && events[ei].frame === f){ cur = events[ei].down; ei++; }
+      upByFrame.set(f, cur);
+    }
+    return upByFrame;
+  }
+
+  const p1Up = buildTimeline(p1events);
+  const p2Up = hasP2 ? buildTimeline(p2events) : null;
+
+  const frames = [];
+  for(let f = 0; f <= duration; f++){
+    const up1 = p1Up.get(f);
+    const st1 = defaultState(up1);
+    st1.diedThisFrame = deathSet.has(f);
+    const frame = {
+      frame: f,
+      playerWorldX: 0,
+      cameraX: 0,
+      cameraY: 0,
+      speed: 0,
+      dual: hasP2,
+      player: { state: st1, rotation: 0, mode: "cube" },
+      dualPlayer: null
+    };
+    if(hasP2){
+      const st2 = defaultState(p2Up.get(f));
+      frame.dualPlayer = { state: st2, rotation: 0, mode: "cube" };
+    }
+    frames.push(frame);
+  }
+
+  return {
+    meta: {
+      author: meta.author || "",
+      level: meta.levelName || (meta.levelId ? `local_${meta.levelId}` : ""),
+      version: 2,
+      name: opts.name || meta.levelName || "converted macro",
+      _convertedFrom: "gdr2",
+      _note: "Physics fields (y, yVelocity, mode, etc.) are placeholders reconstructed from input timing only — gdr2 does not store simulated physics."
+    },
+    frames
+  };
+}
+
+/* ============================= UI wiring ============================= */
+function setupDrop(dropId, fileId, fnameId, onFile){
+  const drop = document.getElementById(dropId);
+  const input = document.getElementById(fileId);
+  const fname = document.getElementById(fnameId);
+  drop.addEventListener('click', () => input.click());
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault(); drop.classList.remove('drag');
+    if(e.dataTransfer.files.length) handle(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change', () => { if(input.files.length) handle(input.files[0]); });
+  function handle(file){
+    fname.textContent = file.name;
+    onFile(file);
+  }
+}
+
+function log(el, msg, cls){
+  el.classList.add('show');
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog(el){ el.innerHTML=''; el.classList.remove('show'); }
+
+function download(bytesOrString, filename, isBinary){
+  const blob = isBinary ? new Blob([bytesOrString], {type:'application/octet-stream'})
+                         : new Blob([bytesOrString], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// --- wbgdr2 -> gdr2 ---
+let wbFile = null, wbBaseName = "macro";
+setupDrop('drop1','file1','fname1', (file) => {
+  wbFile = file;
+  wbBaseName = file.name.replace(/\.[^.]+$/, "");
+  document.getElementById('opts1').classList.add('show');
+  document.getElementById('go1').disabled = false;
+  clearLog(document.getElementById('log1'));
+});
+
+document.getElementById('go1').addEventListener('click', async () => {
+  const logEl = document.getElementById('log1');
+  clearLog(logEl);
+  try{
+    const text = await wbFile.text();
+    const wb = JSON.parse(text);
+    const opts = {
+      framerate: parseInt(document.getElementById('fps1').value, 10) || 240,
+      gameVersion: parseInt(document.getElementById('gv1').value, 10) || 0,
+      botName: document.getElementById('botname1').value || "converter",
+      platformer: document.getElementById('pf1').checked
+    };
+    const bytes = wbgdr2ToGdr2(wb, opts, (m,c)=>log(logEl,m,c));
+    download(bytes, wbBaseName + ".gdr2", true);
+    log(logEl, `Done — wrote ${bytes.length} bytes.`, "ok");
+  } catch(e){
+    log(logEl, "Error: " + e.message, "err");
+    console.error(e);
+  }
+});
+
+// --- gdr2 -> wbgdr2 ---
+let gdrFile = null, gdrBaseName = "macro";
+setupDrop('drop2','file2','fname2', (file) => {
+  gdrFile = file;
+  gdrBaseName = file.name.replace(/\.[^.]+$/, "");
+  document.getElementById('opts2').classList.add('show');
+  document.getElementById('go2').disabled = false;
+  clearLog(document.getElementById('log2'));
+});
+
+document.getElementById('go2').addEventListener('click', async () => {
+  const logEl = document.getElementById('log2');
+  clearLog(logEl);
+  try{
+    const buf = await gdrFile.arrayBuffer();
+    const parsed = decodeGDR2(new Uint8Array(buf));
+    log(logEl, `Parsed GDR2 v${parsed.version} — author "${parsed.meta.author}", ${parsed.inputs.length} inputs, ${parsed.deaths.length} deaths`, "ok");
+    const opts = { name: document.getElementById('name2').value || gdrBaseName };
+    const wb = gdr2ToWbgdr2(parsed, opts);
+    download(JSON.stringify(wb, null, 2), gdrBaseName + ".wbgdr2", false);
+    log(logEl, `Done — wrote ${wb.frames.length} frames.`, "ok");
+    log(logEl, "Note: physics fields are reconstructed placeholders, not simulated gameplay.", "warn");
+  } catch(e){
+    log(logEl, "Error: " + e.message, "err");
+    console.error(e);
+  }
+});
+</script>
+</body>
+</html>
