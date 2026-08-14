@@ -119,10 +119,8 @@
       </div>
 
       <div class="opts" id="opts1">
-        <div class="row"><label>Framerate</label><input type="number" id="fps1" value="240" min="1"></div>
+        <div class="row"><label>Framerate</label><input type="number" id="fps1" value="120" min="1"></div>
         <div class="row"><label>Game version</label><input type="number" id="gv1" value="22074" min="0"></div>
-        <div class="row"><label>Bot name</label><input type="text" id="botname1" value="wbgdr2-converter"></div>
-        <div class="row chk"><label for="pf1">Platformer input packing</label><input type="checkbox" id="pf1"></div>
       </div>
 
       <button class="go" id="go1" disabled>Convert to .gdr2</button>
@@ -570,10 +568,10 @@ document.getElementById('go1').addEventListener('click', async () => {
     const text = await wbFile.text();
     const wb = JSON.parse(text);
     const opts = {
-      framerate: parseInt(document.getElementById('fps1').value, 10) || 240,
+      framerate: parseInt(document.getElementById('fps1').value, 10) || 120,
       gameVersion: parseInt(document.getElementById('gv1').value, 10) || 0,
-      botName: document.getElementById('botname1').value || "converter",
-      platformer: document.getElementById('pf1').checked
+      botName: "wbgdr2-converter",
+      platformer: false
     };
     const bytes = wbgdr2ToGdr2(wb, opts, (m,c)=>log(logEl,m,c));
     download(bytes, wbBaseName + ".gdr2", true);
