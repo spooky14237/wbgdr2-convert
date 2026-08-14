@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>wbgdr2 ⇄ gdr2 Converter</title>
+<title>wbgdr2 ➞ gdr2 Converter</title>
 <style>
   :root{
     --bg: #0d0f14;
@@ -102,7 +102,7 @@
 <div class="wrap">
   <header>
     <div class="eyebrow"><span class="tick"></span>macro format converter</div>
-    <h1>wbgdr2 ⇄ gdr2</h1>
+    <h1>wbgdr2 ➞ gdr2</h1>
     <p>Convert between <code>.wbgdr2</code> (the JSON per-frame physics format used by web Geometry Dash recreations) and <code>.gdr2</code> (the binary <strong>GDReplayFormat v2</strong> used by 2.2 mod-menu bots). Everything runs locally in your browser — nothing is uploaded anywhere.</p>
   </header>
 
@@ -127,9 +127,8 @@
 
   <footer>
     <strong>Notes on fidelity</strong><br>
-    • <strong>wbgdr2 → gdr2</strong> is derived directly from your file's <code>upKeyDown</code> transitions (per frame, per player), so click/release timing round-trips exactly. Death frames are pulled from <code>diedThisFrame</code> when present.<br>
-    • <strong>gdr2 → wbgdr2</strong> can only reconstruct input timing (jump down/up per frame), not simulated physics — the output fills placeholder physics state so the file matches the wbgdr2 shape, but <code>y</code>/<code>yVelocity</code>/<code>mode</code>/etc. won't reflect real gameplay unless your web recreation re-simulates from inputs.<br>
-    • Binary layout is ported directly from the reference <a href="https://github.com/maxnut/GDReplayFormat/blob/gdr2/include/gdr/gdr.hpp" style="color:var(--accent)" target="_blank">GDReplayFormat v2 source</a> (not just the readme, which describes a couple of fields inaccurately) — length-prefixed strings, big-endian float duration/framerate, delta+LEB128-packed inputs — and cross-checked byte-for-byte against the real C++ library in both directions. It doesn't include bot-specific extension fields.
+    • <strong>wbgdr2 → gdr2</strong> is derived directly from your file's <code>upKeyDown</code> transitions (per frame, per player), so click/release timing round-trips exactly. Death frames are pulled from <code>diedThisFrame</code> when present. Made using <a href="https://github.com/maxnut/GDReplayFormat/blob/gdr2/include/gdr/gdr.hpp" style="color:var(--accent)" target="_blank">GDReplayFormat v2 source</a><br>
+  
   </footer>
 </div>
 
