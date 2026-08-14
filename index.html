@@ -106,9 +106,7 @@
     <p>Convert between <code>.wbgdr2</code> (the JSON per-frame physics format used by web Geometry Dash recreations) and <code>.gdr2</code> (the binary <strong>GDReplayFormat v2</strong> used by 2.2 mod-menu bots). Everything runs locally in your browser — nothing is uploaded anywhere.</p>
   </header>
 
-  <div class="grid">
-    <!-- wbgdr2 -> gdr2 -->
-    <div class="card a">
+  <div class="card a">
       <h2>.wbgdr2 <span class="arrow">→</span> .gdr2</h2>
       <p class="sub">Reads jump/input events out of the per-frame physics log and packs them into a real GDR2 binary replay.</p>
 
@@ -126,26 +124,6 @@
       <button class="go" id="go1" disabled>Convert to .gdr2</button>
       <div class="log" id="log1"></div>
     </div>
-
-    <!-- gdr2 -> wbgdr2 -->
-    <div class="card b">
-      <h2>.gdr2 <span class="arrow">→</span> .wbgdr2</h2>
-      <p class="sub">Reads the input timeline out of a GDR2 replay and rebuilds a wbgdr2-shaped JSON. Physics fields (position, velocity, mode…) can't be recovered from gdr2 — see the note below.</p>
-
-      <div class="drop" id="drop2">
-        Drop a <strong>.gdr2</strong> file here<br>or click to browse
-        <div class="filename" id="fname2"></div>
-        <input type="file" id="file2" accept=".gdr2">
-      </div>
-
-      <div class="opts" id="opts2">
-        <div class="row"><label>Macro name</label><input type="text" id="name2" value=""></div>
-      </div>
-
-      <button class="go" id="go2" disabled>Convert to .wbgdr2</button>
-      <div class="log" id="log2"></div>
-    </div>
-  </div>
 
   <footer>
     <strong>Notes on fidelity</strong><br>
